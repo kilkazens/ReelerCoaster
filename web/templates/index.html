@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReelerCoaster 🎢 | Автонарезка Shorts & Reels</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="stars-bg"></div>
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <header class="app-header">
+    <div class="logo">
+      <span class="logo-icon">🎢</span>
+      <span class="logo-text">Reeler<span>Coaster</span></span>
+      <span class="badge">AI STUDIO</span>
+    </div>
+    <div class="header-status" id="gpuStatus">
+      <span class="dot active"></span> GPU Ускорение активно
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HERO SECTION -->
+    <section class="hero-intro">
+      <h1>Автоматическая нарезка на <span>Reels & Shorts</span></h1>
+      <p>Закинь видео или ссылку — AI сам найдёт вирусные моменты, обрежет под 9:16 с трекингом лица или вебки и наложит динамические субтитры.</p>
+    </section>
+
+    <!-- WORKBENCH GRID -->
+    <div class="workbench">
+      <!-- CONFIGURATION CARD -->
+      <div class="glass-card config-panel">
+        <h2 class="panel-title"><span class="icon">⚙️</span> Параметры генерации</h2>
+
+        <!-- SOURCE SELECTION -->
+        <div class="form-group">
+          <label>Источник видео</label>
+          <div class="tab-toggle">
+            <button type="button" class="tab-btn active" id="tabUrlBtn" onclick="switchSourceTab('url')">🔗 Ссылка (YouTube / Twitch)</button>
+            <button type="button" class="tab-btn" id="tabFileBtn" onclick="switchSourceTab('file')">📁 Локальный файл</button>
+          </div>
+
+          <!-- URL Input -->
+          <div id="urlInputContainer" class="input-container mt-2">
+            <input type="text" id="videoUrl" placeholder="https://www.youtube.com/watch?v=... или Twitch клип" class="text-input">
+          </div>
+
+          <!-- File Upload Input -->
+          <div id="fileInputContainer" class="input-container mt-2 hidden">
+            <div class="file-dropzone" id="dropzone" onclick="document.getElementById('videoFile').click()">
+              <input type="file" id="videoFile" accept="video/*" class="hidden" onchange="handleFileSelected(event)">
+              <div class="drop-icon">📤</div>
+              <div class="drop-text" id="fileLabel">Перетащите видео сюда или нажмите для выбора</div>
+              <div class="drop-sub">MP4, MOV, MKV, WebM до 2 ГБ</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE SELECTION -->
+        <div class="form-group">
+          <label>Тип контента</label>
+          <div class="mode-grid">
+            <div class="mode-card active" id="modeIrl" onclick="selectMode('irl')">
+              <div class="mode-icon">🎙️</div>
+              <div class="mode-info">
+                <div class="mode-name">IRL / Подкаст</div>
+                <div class="mode-desc">Умный авто-трекинг по голове и лицу</div>
+              </div>
+            </div>
+            <div class="mode-card" id="modeGaming" onclick="selectMode('gaming')">
+              <div class="mode-icon">🎮</div>
+              <div class="mode-info">
+                <div class="mode-name">Гейминг</div>
+                <div class="mode-desc">Центрирование + вебка сплит-скрин</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GAMING OPTIONS (Webcam Placement) -->
+        <div class="form-group hidden" id="gamingOptions">
+          <label>Настройка вебки стримера</label>
+          <div class="tab-toggle" style="margin-bottom: 0.75rem;">
+            <button type="button" class="tab-btn active" id="tabCamVisual" onclick="switchCamMode('visual')">🎯 Выбрать на кадре (Своя зона)</button>
+            <button type="button" class="tab-btn" id="tabCamPreset" onclick="switchCamMode('preset')">⚡ Пресеты / Без вебки</button>
+          </div>
+
+          <!-- PRESETS SELECT -->
+          <div id="camPresetContainer" class="hidden">
+            <select id="webcamPosition" class="select-input" onchange="onWebcamPresetSelect(this.value)">
+              <option value="none">Без вебки (Центр экрана)</option>
+              <option value="top_right" selected>Сверху-Справа (Топ стримеров)</option>
+              <option value="top_left">Сверху-Слева</option>
+              <option value="bottom_right">Снизу-Справа</option>
+              <option value="bottom_left">Снизу-Слева</option>
+              <option value="fit_blur">Размытые края (Fit 16:9 + Blur BG)</option>
+            </select>
+          </div>
+
+          <!-- INTERACTIVE VISUAL BOX PICKER -->
+          <div id="camVisualContainer" class="cam-visual-container">
+            <div class="cam-stage-wrapper">
+              <div id="camStage" class="cam-stage">
+                <!-- Frame / Mockup background -->
+                <img id="camStageBg" class="cam-stage-bg hidden" alt="Video Frame">
+                <div id="camStageMockup" class="cam-stage-mockup">
+                  <div class="mockup-hud top-hud">GAMEPLAY 16:9</div>
+                  <div class="mockup-crosshair">✛</div>
+                  <div class="mockup-hud bottom-hud">HUD / MINIMAP</div>
+                </div>
+
+                <!-- Draggable / Resizable Box -->
+                <div id="camBox" class="cam-box">
+                  <div class="cam-box-label">📹 ВЕБКА</div>
+                  <div class="cam-handle handle-br" title="Потяните для изменения размера"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick position pills -->
+            <div class="cam-quick-pills">
+              <span class="pill-title">Быстро:</span>
+              <button type="button" class="cam-pill" onclick="setCamBoxPreset(72, 4, 25, 34)">Сверху-Справа</button>
+              <button type="button" class="cam-pill" onclick="setCamBoxPreset(3, 4, 25, 34)">Сверху-Слева</button>
+              <button type="button" class="cam-pill" onclick="setCamBoxPreset(72, 62, 25, 34)">Снизу-Справа</button>
+              <button type="button" class="cam-pill" onclick="setCamBoxPreset(3, 62, 25, 34)">Снизу-Слева</button>
+            </div>
+
+            <div class="cam-coords-readout" id="camCoords">
+              📍 X: 72% | Y: 4% | Размер: 25% × 34%
+            </div>
+          </div>
+          <p class="field-help" style="margin-top: 0.5rem;">
+            🖐️ <strong>Свободное позиционирование:</strong> Перетащите зелёную рамку мышкой в любое место кадра и измените её размер за правый нижний угол.
+          </p>
+        </div>
+
+        <!-- SUBTITLE SETTINGS -->
+        <div class="form-group">
+          <div class="checkbox-label">
+            <input type="checkbox" id="enableSubtitles" checked onchange="toggleSubtitleStyle(this.checked)">
+            <span>Включить динамические караоке-субтитры</span>
+          </div>
+
+          <div id="subtitleOptions" class="sub-options mt-2">
+            <div class="row">
+              <div class="col">
+                <label class="sub-label">Стиль субтитров</label>
+                <select id="subtitleStyle" class="select-input">
+                  <option value="beast">🔥 Beast Style (Жёлтый поп)</option>
+                  <option value="neon">⚡ Neon Glow (Циан)</option>
+                  <option value="minimal">✨ Clean Minimal (Белый)</option>
+                </select>
+              </div>
+              <div class="col">
+                <label class="sub-label">Модель Whisper</label>
+                <select id="whisperModel" class="select-input">
+                  <option value="base" selected>Base (Быстро & Точно)</option>
+                  <option value="small">Small (Повышенная точность)</option>
+                  <option value="tiny">Tiny (Молниеносно)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STRATEGY SELECTION -->
+        <div class="form-group">
+          <label>Режим нарезки</label>
+          <div class="mode-grid">
+            <div class="mode-card active" id="stratHighlights" onclick="selectStrategy('highlights')">
+              <div class="mode-icon">🔥</div>
+              <div class="mode-info">
+                <div class="mode-name">Хайлайты</div>
+                <div class="mode-desc">Поиск самых сочных моментов</div>
+              </div>
+            </div>
+            <div class="mode-card" id="stratFullSplit" onclick="selectStrategy('full_split')">
+              <div class="mode-icon">✂️</div>
+              <div class="mode-info">
+                <div class="mode-name">Нарезка на серии</div>
+                <div class="mode-desc">Делит всё видео на Часть 1, 2...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLIP QUANTITY & RANGE (FOR HIGHLIGHTS) -->
+        <div class="form-group" id="highlightsConfig">
+          <div class="row">
+            <div class="col">
+              <label>Количество хайлайтов</label>
+              <input type="number" id="targetClips" min="1" max="10" value="3" class="text-input">
+            </div>
+            <div class="col">
+              <label>Длительность (сек)</label>
+              <input type="number" id="clipDuration" min="15" max="90" value="45" class="text-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- FULL SPLIT CONFIG (FOR SERIES / PARTS) -->
+        <div class="form-group hidden" id="fullSplitConfig">
+          <label>Желаемая длительность одной серии</label>
+          <select id="partDurationPreset" class="select-input" onchange="onPartPresetChange(this.value)">
+            <option value="60">~60 сек (1 минута)</option>
+            <option value="90" selected>~90 сек (1.5 минуты)</option>
+            <option value="120">~120 сек (2 минуты)</option>
+            <option value="custom">Своя длительность...</option>
+          </select>
+          <div id="customDurationContainer" class="mt-2 hidden">
+            <input type="number" id="targetPartDuration" min="30" max="180" value="90" class="text-input" placeholder="Секунд на серию (например, 75)">
+          </div>
+          <p class="field-help" style="color: #00f3ff; margin-top: 0.5rem;">
+            💡 <strong>Умная граница:</strong> AI автоматически просканирует речь и разделит видео в точках пауз или логических концов фраз, чтобы не обрезать слова на полуслове.
+          </p>
+        </div>
+
+        <!-- DISK CLEANUP OPTION -->
+        <div class="form-group">
+          <div class="checkbox-label">
+            <input type="checkbox" id="cleanupSource" checked>
+            <span>🧹 Удалять тяжёлый исходник после нарезки (экономит диск)</span>
+          </div>
+          <p class="field-help">После нарезки сохранятся только готовые вертикальные Reels (9:16), а многогигабайтные исходники и кэш очистятся автоматически.</p>
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button type="button" id="startBtn" class="btn-primary" onclick="startGeneration()">
+          <span class="btn-icon">🚀</span>
+          <span>Нарезать Reels сейчас</span>
+        </button>
+      </div>
+
+      <!-- STATUS & RESULTS PANEL -->
+      <div class="glass-card preview-panel">
+        <h2 class="panel-title"><span class="icon">🎬</span> Готовые нарезки</h2>
+
+        <!-- EMPTY STATE -->
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">📼</div>
+          <div class="empty-title">Здесь появятся ваши готовые Reels</div>
+          <p class="empty-desc">Заполните форму слева и запустите авто-нарезку. Процесс займёт всего 1-2 минуты.</p>
+        </div>
+
+        <!-- PROGRESS STATE -->
+        <div id="progressState" class="progress-state hidden">
+          <div class="spinner-container">
+            <div class="neon-spinner"></div>
+          </div>
+          <div class="progress-title" id="progressTitle">Инициализация конвейера...</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressBar" style="width: 10%;"></div>
+          </div>
+          <div class="progress-pct" id="progressPct">10%</div>
+          <div class="steps-log" id="stepsLog">
+            <div class="log-entry">⏳ Подготовка окружения...</div>
+          </div>
+        </div>
+
+        <!-- RESULTS GRID -->
+        <div id="resultsGrid" class="results-grid hidden">
+          <!-- Dynamically populated cards -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>ReelerCoaster Studio • Powered by Whisper AI, OpenCV Smart Tracking & FFmpeg NVENC</p>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
